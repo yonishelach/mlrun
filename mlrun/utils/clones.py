@@ -83,7 +83,7 @@ def clone_git(url, context, secrets=None, clone=True):
     secrets = secrets or {}
 
     def get_secret(key):
-        key_with_prefix = config.to_dict().get("env_variable_prefix", "") + key
+        key_with_prefix = "MLRUN_K8S_SECRET__" + key
         return os.environ.get(key) or os.environ.get(key_with_prefix, secrets.get(key))
 
     url_obj = urlparse(url)
