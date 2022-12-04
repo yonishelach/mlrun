@@ -83,10 +83,8 @@ def clone_git(url, context, secrets=None, clone=True):
     secrets = secrets or {}
 
     def get_secret(key):
-        return os.environ.get(key) or os.environ.get(
-            config.to_dict().get("env_variable_prefix"), secrets.get(key)
-        )
-        # return os.environ.get(key, secrets.get(key))
+        key_with_prefix = config.to_dict().get("env_variable_prefix", "") + key
+        return os.environ.get(key) or os.environ.get(key_with_prefix, secrets.get(key))
 
     url_obj = urlparse(url)
     if not context:
