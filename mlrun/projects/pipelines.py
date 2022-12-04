@@ -738,6 +738,7 @@ class _RemoteRunner(_PipelineRunner):
                         "ttl": workflow_spec.ttl,
                         "engine": workflow_spec.engine,
                         "local": workflow_spec.run_local,
+                        "secrets": secrets,
                     },
                     "handler": "mlrun.projects.load_and_run",
                 },
@@ -900,6 +901,7 @@ def load_and_run(
     init_git: bool = None,
     subpath: str = None,
     clone: bool = False,
+    secrets: dict = None,
     workflow_name: str = None,
     workflow_path: str = None,
     workflow_arguments: typing.Dict[str, typing.Any] = None,
@@ -919,6 +921,7 @@ def load_and_run(
         init_git=init_git,
         subpath=subpath,
         clone=clone,
+        secrets=secrets,
     )
     context.logger.info(f"Loaded project {project.name} from remote successfully")
 
