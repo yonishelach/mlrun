@@ -75,7 +75,7 @@ default_config = {
     "spark_operator_version": "spark-3",  # the version of the spark operator in use
     "builder_alpine_image": "alpine:3.13.1",  # builder alpine image (as kaniko's initContainer)
     "package_path": "mlrun",  # mlrun pip package
-    "default_base_image": "yonishelach/mlrun:workflow-api",  # default base image when doing .deploy()
+    "default_base_image": "yonishelach/mlrun:workflow-api-testing",  # default base image when doing .deploy()
     "default_project": "default",  # default project name
     "default_archive": "",  # default remote archive URL (for build tar.gz)
     "mpijob_crd_version": "",  # mpijob crd version (e.g: "v1alpha1". must be in: mlrun.runtime.MPIJobCRDVersions)
@@ -366,6 +366,8 @@ default_config = {
         },
         "batch_processing_function_branch": "master",
         "parquet_batching_max_events": 10000,
+        # See mlrun.api.schemas.ModelEndpointStoreType for available options
+        "store_type": "kv",
     },
     "secret_stores": {
         "vault": {
@@ -874,6 +876,10 @@ class Config:
     def is_nuclio_detected(self):
         # determine is Nuclio service is detected, when the nuclio_version is not set
         return True if mlrun.mlconf.nuclio_version else False
+
+    def get_v3io_access_key(self):
+        # Get v3io access key from the environment
+        return os.environ.get("V3IO_ACCESS_KEY")
 
 
 # Global configuration
