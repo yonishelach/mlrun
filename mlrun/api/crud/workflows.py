@@ -64,7 +64,7 @@ class Workflows(
     ):
         run_kwargs = kwargs.pop("run_kwargs", {})
         workflow_spec = kwargs.get("workflow_spec")
-        kwargs["project"] = project
+        kwargs["project"] = project if isinstance(project, str) else project.metadata.name
         if load_only:
             runspec = _create_run_object(
                 runspec_function=_create_run_object_for_load_project,
