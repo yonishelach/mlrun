@@ -176,10 +176,7 @@ def _create_run_object_for_workflow_runner(
     return spec, metadata
 
 
-def _create_run_object_for_load_project(
-    project,
-    source,
-):
+def _create_run_object_for_load_project(project, source):
     spec = {
         "parameters": {
             "url": source,
