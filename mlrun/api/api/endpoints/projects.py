@@ -366,6 +366,7 @@ def load_project(
     # Creating the auxiliary function for loading the project:
     load_project_fn = mlrun.api.crud.Workflows().create_function(
         run_name=f"load-project-{name}",
+        project=name,
         kind=mlrun.runtimes.RuntimeKinds.job,
         # For preventing deployment
         image=mlrun.mlconf.default_base_image,
