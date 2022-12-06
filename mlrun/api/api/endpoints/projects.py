@@ -388,7 +388,6 @@ async def load_project(
         kind=load_project_fn.kind,
     )
 
-    load_only = True
     background_timeout = mlrun.mlconf.background_tasks.default_timeouts.runtimes.dask
 
     background_task = await fastapi.concurrency.run_in_threadpool(
@@ -396,16 +395,24 @@ async def load_project(
         db_session,
         name,
         background_tasks,
-        mlrun.api.crud.Workflows().execute_function,
+        _execute_function,
         background_timeout,
         # arguments for execute_function
         load_project_fn,
         project,
-        load_only,
         source=source,
     )
 
     return background_task
+
+
+def _execute_function(function, project, source):
+    return mlrun.api.crud.Workflows().execute_function(
+        function=function,
+        project=project,
+        load_only=True,
+        source=source,
+    )
 
 
 def _is_request_from_leader(
