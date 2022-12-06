@@ -356,7 +356,7 @@ async def load_project(
         ),
         spec=mlrun.api.schemas.ProjectSpec(
             source=source,
-        )
+        ),
     )
     # We must store the project before we run the remote load_project function because
     # we want this function will be running under the project itself instead of the default project.
@@ -402,7 +402,7 @@ async def load_project(
         load_project_fn,
         project,
         load_only,
-        source,
+        source=source,
     )
 
     return background_task
