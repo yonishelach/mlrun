@@ -23,6 +23,7 @@ import mlrun.api.api.deps
 import mlrun.api.crud
 import mlrun.api.schemas
 import mlrun.api.utils.auth.verifier
+import mlrun.api.utils.background_tasks
 import mlrun.api.utils.clients.chief
 from mlrun.api.utils.singletons.project_member import get_project_member
 from mlrun.utils import logger
@@ -321,11 +322,12 @@ async def get_project_summary(
 
 
 @router.post(
-    "/projects/{project}/load",
+    "/projects/{project}/load", response_model=mlrun.api.schemas.BackgroundTask
 )
-def load_project(
+async def load_project(
     name: str,
     source: str,
+    background_tasks: fastapi.BackgroundTasks,
     auth_info: mlrun.api.schemas.AuthInfo = fastapi.Depends(
         mlrun.api.api.deps.authenticate_request
     ),
@@ -334,14 +336,18 @@ def load_project(
     ),
 ):
     """
-    :param name:        project name
-    :param source:      name (in DB) or git or tar.gz or .zip sources archive path e.g.:
-                        git://github.com/mlrun/demo-xgb-project.git
-                        http://mysite/archived-project.zip
-                        <project-name>
-                        The git project should include the project yaml file.
-    :param auth_info:   auth info of the request
-    :param db_session:  session that manages the current dialog with the database
+    Loading a project remotely from a given source.
+
+    :param name:                project name
+    :param source:              name (in DB) or git or tar.gz or .zip sources archive path e.g.:
+                                git://github.com/mlrun/demo-xgb-project.git
+                                http://mysite/archived-project.zip
+                                <project-name>
+                                The git project should include the project yaml file.
+    :param background_tasks:    Injected automatically by fastapi.
+    :param auth_info:           auth info of the request
+    :param db_session:          session that manages the current dialog with the database
+
     :returns:    The project object.
     """
     project = mlrun.api.schemas.Project(
@@ -352,7 +358,8 @@ def load_project(
             source=source,
         )
     )
-    # Storing project:
+    # We must store the project before we run the remote load_project function because
+    # we want this function will be running under the project itself instead of the default project.
     project, is_running_in_background = get_project_member().store_project(
         db_session,
         name,
@@ -360,8 +367,6 @@ def load_project(
         auth_info.projects_role,
         auth_info.session,
     )
-    # if is_running_in_background:
-    #     response = fastapi.Response(status_code=http.HTTPStatus.ACCEPTED.value)
 
     # Creating the auxiliary function for loading the project:
     load_project_fn = mlrun.api.crud.Workflows().create_function(
@@ -383,16 +388,24 @@ def load_project(
         kind=load_project_fn.kind,
     )
 
-    mlrun.api.crud.Workflows().execute_function(
-        function=load_project_fn,
-        project=project,
-        source=source,
-        load_only=True,
+    load_only = True
+    background_timeout = mlrun.mlconf.background_tasks.default_timeouts.runtimes.dask
+
+    background_task = await fastapi.concurrency.run_in_threadpool(
+        mlrun.api.utils.background_tasks.ProjectBackgroundTasksHandler().create_background_task,
+        db_session,
+        name,
+        background_tasks,
+        mlrun.api.crud.Workflows().execute_function,
+        background_timeout,
+        # arguments for execute_function
+        load_project_fn,
+        project,
+        load_only,
+        source,
     )
 
-    return mlrun.api.schemas.Project(
-        project=project,
-    )
+    return background_task
 
 
 def _is_request_from_leader(
