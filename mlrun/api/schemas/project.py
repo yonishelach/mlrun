@@ -126,3 +126,12 @@ class ProjectsOutput(pydantic.BaseModel):
 
 class ProjectSummariesOutput(pydantic.BaseModel):
     project_summaries: typing.List[ProjectSummary]
+
+
+class LoadProjectInput(pydantic.BaseModel):
+    url: typing.Optional[str] = None
+    name: str = ""
+    secrets: typing.Optional[dict] = None
+    init_git: typing.Optional[bool] = None
+    subpath: typing.Optional[str] = None
+    clone: typing.Optional[bool] = None

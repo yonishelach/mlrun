@@ -64,7 +64,9 @@ class Workflows(
     ):
         run_kwargs = kwargs.pop("run_kwargs", {})
         workflow_spec = kwargs.get("workflow_spec")
-        kwargs["project"] = project
+        kwargs["project"] = (
+            project if isinstance(project, str) else project.metadata.name
+        )
         if load_only:
             runspec = _create_run_object(
                 runspec_function=_create_run_object_for_load_project,
@@ -72,7 +74,6 @@ class Workflows(
                 **kwargs,
             )
         else:
-
             workflow_name = kwargs.get("workflow_name") or workflow_spec.name
 
             runspec = _create_run_object(
@@ -178,14 +179,14 @@ def _create_run_object_for_workflow_runner(
 
 def _create_run_object_for_load_project(
     project,
-    source,
+    **params,
 ):
+    params = params or {}
+    params["load_only"] = True
+    params["project_name"] = project
+
     spec = {
-        "parameters": {
-            "url": source,
-            "project_name": project,
-            "load_only": True,
-        },
+        "parameters": params,
         "handler": "mlrun.projects.load_and_run",
     }
     return spec
