@@ -129,8 +129,7 @@ class ProjectSummariesOutput(pydantic.BaseModel):
 
 
 class LoadProjectInput(pydantic.BaseModel):
-    url: typing.Optional[str] = None
-    name: str = ""
+    url: str
     secrets: typing.Optional[dict] = None
     init_git: typing.Optional[bool] = None
     subpath: typing.Optional[str] = None

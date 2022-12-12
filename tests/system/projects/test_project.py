@@ -25,6 +25,7 @@ from kfp import dsl
 
 import mlrun
 from mlrun.artifacts import Artifact
+from mlrun.api.schemas import BackgroundTaskState
 from mlrun.model import EntrypointParam
 from mlrun.utils import logger
 from tests.conftest import out_path
@@ -701,3 +702,19 @@ class TestProject(TestMLRunSystem):
         project.set_secrets(file_path=env_file)
         secrets = db.list_project_secret_keys(name, provider="kubernetes")
         assert secrets.secret_keys == ["ENV_ARG1", "ENV_ARG2"]
+
+    def test_load_project_from_endpoint(self):
+        name = "load-test"
+        background_task = self._run_db.load_project(
+            name=name,
+            url="git://github.com/mlrun/project-demo.git",
+        )
+        assert background_task.status.state == BackgroundTaskState.running, "load project failed to run as a background task"
+
+        # Measuring time: todo: replace with number of tries and sleep
+        start = time.time()
+        while True:
+            background_task_resp = self._run_db.get_background_task(background_task.metadata.name)
+            if background_task_resp.status.state == BackgroundTaskState.succeeded:
+                break
+            assert background_task_resp.status.state == BackgroundTaskState.running
