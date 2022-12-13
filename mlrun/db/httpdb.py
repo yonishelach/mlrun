@@ -3019,7 +3019,7 @@ class HTTPRunDB(RunDBInterface):
             clone=clone,
         )
         response = self.api_call(
-            "PUT", f"projects/{name}/load", params={"load-request": load_request}
+            "POST", f"projects/{name}/load", params={"load-request": load_request}
         )
         return schemas.BackgroundTask(**response.json())
 

@@ -730,3 +730,4 @@ class TestProject(TestMLRunSystem):
             if background_task_resp.status.state == BackgroundTaskState.succeeded:
                 break
         assert background_task_resp.status.state == BackgroundTaskState.running
+        print(time.time() - start)

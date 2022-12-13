@@ -321,7 +321,7 @@ async def get_project_summary(
     return project_summary
 
 
-@router.put(
+@router.post(
     "/projects/{name}/load", response_model=mlrun.api.schemas.BackgroundTask
 )
 async def load_project(
