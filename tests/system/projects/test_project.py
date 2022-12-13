@@ -709,12 +709,16 @@ class TestProject(TestMLRunSystem):
             name=name,
             url="git://github.com/mlrun/project-demo.git",
         )
-        assert background_task.status.state == BackgroundTaskState.running, "load project failed to run as a background task"
+        assert (
+            background_task.status.state == BackgroundTaskState.running
+        ), "load project failed to run as a background task"
 
         # Measuring time: todo: replace with number of tries and sleep
         start = time.time()
         while True:
-            background_task_resp = self._run_db.get_background_task(background_task.metadata.name)
+            background_task_resp = self._run_db.get_background_task(
+                background_task.metadata.name
+            )
             if background_task_resp.status.state == BackgroundTaskState.succeeded:
                 break
             assert background_task_resp.status.state == BackgroundTaskState.running
