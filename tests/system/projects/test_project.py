@@ -703,6 +703,14 @@ class TestProject(TestMLRunSystem):
         secrets = db.list_project_secret_keys(name, provider="kubernetes")
         assert secrets.secret_keys == ["ENV_ARG1", "ENV_ARG2"]
 
+    def test_failed_schedule_workflow_non_remote_project(self):
+        name = "non-remote-fail"
+        project = self._create_project(name)
+        self.custom_project_names_to_delete.append(name)
+
+        with pytest.raises(mlrun.errors.MLRunInvalidArgumentError):
+            project.run("main", schedule="*/10 * * * *")
+
     def test_load_project_from_endpoint(self):
         name = "load-test"
         background_task = self._run_db.load_project(
@@ -721,4 +729,4 @@ class TestProject(TestMLRunSystem):
             )
             if background_task_resp.status.state == BackgroundTaskState.succeeded:
                 break
-            assert background_task_resp.status.state == BackgroundTaskState.running
+        assert background_task_resp.status.state == BackgroundTaskState.running

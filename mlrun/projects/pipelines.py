@@ -708,6 +708,12 @@ class _RemoteRunner(_PipelineRunner):
         runner_name = f"workflow-runner-{workflow_name}"
         workflow_id = None
 
+        if workflow_spec.schedule and not project.spec.is_remote():
+            raise mlrun.errors.MLRunInvalidArgumentError(
+                f"Workflow scheduling can only be performed by a remote project."
+                f"The project's source: {project.spec.source} is not a remote one e.g., git."
+            )
+
         try:
             run_db = mlrun.get_run_db()
             msg = "executing workflow "
