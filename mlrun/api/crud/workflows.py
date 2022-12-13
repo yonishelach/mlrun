@@ -70,7 +70,10 @@ class Workflows(
         if load_only:
             runspec = _create_run_object(
                 runspec_function=_create_run_object_for_load_project,
-                labels=[("job-type", "project-loader"), ("project", project)],
+                labels=[
+                    ("job-type", "project-loader"),
+                    ("project", project.metadata.name),
+                ],
                 **kwargs,
             )
         else:
