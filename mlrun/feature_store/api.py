@@ -795,7 +795,7 @@ def _ingest_with_spark(
             df = source
         else:
             df = source.to_spark_df(spark)
-            df = source.filter_df_start_end_time(df)
+            df = source.filter_df_start_end_time(df, featureset.spec.timestamp_key)
         if featureset.spec.graph and featureset.spec.graph.steps:
             df = run_spark_graph(df, featureset, namespace, spark)
         _infer_from_static_df(df, featureset, options=infer_options)
@@ -882,7 +882,6 @@ def _ingest_with_spark(
     finally:
         if created_spark_context:
             spark.stop()
-            spark.sparkContext.stop()
             # We shouldn't return a dataframe that depends on a stopped context
             df = None
     if return_df:
