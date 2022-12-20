@@ -112,6 +112,7 @@ from .object import ObjectKind, ObjectMetadata, ObjectSpec, ObjectStatus
 from .pipeline import PipelinesFormat, PipelinesOutput, PipelinesPagination
 from .project import (
     IguazioProject,
+    LoadProjectInput,
     Project,
     ProjectDesiredState,
     ProjectMetadata,
@@ -123,7 +124,6 @@ from .project import (
     ProjectStatus,
     ProjectSummariesOutput,
     ProjectSummary,
-    LoadProjectInput,
 )
 from .runtime_resource import (
     GroupedByJobRuntimeResourcesOutput,

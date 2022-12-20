@@ -321,12 +321,10 @@ async def get_project_summary(
     return project_summary
 
 
-@router.post(
-    "/projects/{name}/load", response_model=mlrun.api.schemas.BackgroundTask
-)
+@router.post("/projects/{name}/load", response_model=mlrun.api.schemas.BackgroundTask)
 async def load_project(
     name: str,
-    load_request: mlrun.api.schemas.LoadProjectInput,
+    url: str,
     background_tasks: fastapi.BackgroundTasks,
     auth_info: mlrun.api.schemas.AuthInfo = fastapi.Depends(
         mlrun.api.api.deps.authenticate_request
@@ -339,14 +337,20 @@ async def load_project(
     Loading a project remotely from a given source.
 
     :param name:                project name
-    :param load_request:        all parameters for mlrun.load_project()
+    :param url:                 git or tar.gz or .zip sources archive path e.g.:
+                                git://github.com/mlrun/demo-xgb-project.git
+                                http://mysite/archived-project.zip
+                                The git project should include the project yaml file.
     :param background_tasks:    Injected automatically by fastapi.
     :param auth_info:           auth info of the request
     :param db_session:          session that manages the current dialog with the database
 
     :returns:   A BackgroundTask object, with details on execution process and its status.
     """
-    project = mlrun.api.schemas.Project(metadata=mlrun.api.schemas.ProjectMetadata(name=name))
+    project = mlrun.api.schemas.Project(
+        metadata=mlrun.api.schemas.ProjectMetadata(name=name),
+        spec=mlrun.api.schemas.ProjectSpec(source=url),
+    )
 
     # We must store the project before we run the remote load_project function because
     # we want this function will be running under the project itself instead of the default project.
@@ -359,16 +363,11 @@ async def load_project(
     )
 
     # Creating the auxiliary function for loading the project:
-    load_project_fn = mlrun.api.crud.Workflows().create_function(
-        run_name=f"load-project-{name}",
+    load_project_fn = mlrun.api.crud.WorkflowRunners().create_workflow_runner(
+        run_name=f"load-{name}",
         project=name,
-        kind=mlrun.runtimes.RuntimeKinds.job,
-        # For preventing deployment
-        image=mlrun.mlconf.default_base_image,
         db_session=db_session,
         auth_info=auth_info,
-        # Enrichment and validation requires an access key.
-        access_key=mlrun.model.Credentials.generate_access_key,
     )
 
     logger.debug(
@@ -385,27 +384,24 @@ async def load_project(
         db_session,
         name,
         background_tasks,
-        _execute_function,
+        _execute_load_project,
         background_timeout,
         # arguments for execute_function
         load_project_fn,
         project,
-        load_request,
     )
 
     return background_task
 
 
-def _execute_function(
-        function: typing.Callable,
-        project: mlrun.api.schemas.Project,
-        load_request: mlrun.api.schemas.LoadProjectInput,
+def _execute_load_project(
+    function: typing.Callable,
+    project: mlrun.api.schemas.Project,
 ):
-    return mlrun.api.crud.Workflows().execute_function(
+    return mlrun.api.crud.WorkflowRunners().execute_workflow_runner(
         function=function,
         project=project,
         load_only=True,
-        **load_request.dict(),
     )
 
 

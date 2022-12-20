@@ -14,7 +14,6 @@
 #
 import copy
 import traceback
-import uuid
 from http import HTTPStatus
 from typing import Dict
 
@@ -32,7 +31,6 @@ import mlrun.api.utils.singletons.db
 import mlrun.api.utils.singletons.project_member
 import mlrun.projects.pipelines
 from mlrun.api.api.utils import log_and_raise
-from mlrun.config import config
 from mlrun.utils.helpers import logger
 
 router = fastapi.APIRouter()
@@ -108,11 +106,11 @@ def submit_workflow(
         auth_info=auth_info,
     )
 
-    # Verifying that project has a workflow name:
+    # Verifying that project has the workflow name:
     project_workflow_names = [workflow["name"] for workflow in project.spec.workflows]
     if name not in project_workflow_names:
         log_and_raise(
-            reason=f"{name} workflow not found in project",
+            reason=f"workflow '{name}' not found in project",
         )
     spec = workflow_request.spec
     workflow = _get_workflow_by_name(project, name)
@@ -123,7 +121,7 @@ def submit_workflow(
         workflow = copy.deepcopy(workflow)
         workflow = {key: val or workflow.get(key) for key, val in spec.dict().items()}
 
-    workflow_spec = mlrun.projects.pipelines.WorkflowSpec.from_dict(workflow)
+    workflow_spec = mlrun.api.schemas.WorkflowSpec(**workflow)
     run_name = workflow_request.run_name or f"workflow-runner-{workflow_spec.name}"
 
     # Scheduling must be performed only by chief:
@@ -160,21 +158,15 @@ def submit_workflow(
         workflow_spec.args = workflow_spec.args or {}
         workflow_spec.args.update(workflow_request.arguments)
 
-    # This function is for loading the project and running workflow remotely.
-    # In this way we support scheduling workflows (by scheduling a job that runs the workflow
     run_name = run_name or f"workflow-runner-{workflow_spec.name}"
 
-    # Creating the auxiliary function for loading and running the workflow
-    load_and_run_fn = mlrun.api.crud.Workflows().create_function(
+    # This function is for loading the project and running workflow remotely.
+    # In this way we support scheduling workflows (by scheduling a job that runs the workflow)
+    load_and_run_fn = mlrun.api.crud.WorkflowRunners().create_workflow_runner(
         run_name=run_name,
         project=project.metadata.name,
-        kind=mlrun.runtimes.RuntimeKinds.job,
-        # For preventing deployment
-        image=mlrun.mlconf.default_base_image,
         db_session=db_session,
         auth_info=auth_info,
-        # Enrichment and validation requires an access key.
-        access_key=mlrun.model.Credentials.generate_access_key,
     )
     logger.debug(
         "saved function for running workflow",
@@ -187,31 +179,16 @@ def submit_workflow(
     )
 
     if workflow_spec.schedule:
-        # This logic follows the one is performed in `BaseRuntime._enrich_run()`
-        meta_uid = uuid.uuid4().hex
-
-        # creating runspec for scheduling:
-        spec = {
-            "scrape_metrics": config.scrape_metrics,
-            "output_path": (
-                workflow_request.artifact_path or config.artifact_path
-            ).replace("{{run.uid}}", meta_uid),
-        }
-        metadata = {"uid": meta_uid, "project": project.metadata.name}
-
         try:
-            mlrun.api.crud.Workflows().execute_function(
+            mlrun.api.crud.WorkflowRunners().schedule_workflow_runner(
                 function=load_and_run_fn,
                 project=project,
                 workflow_spec=workflow_spec,
                 artifact_path=workflow_request.artifact_path,
                 namespace=workflow_request.namespace,
-                spec=spec,
-                metadata=metadata,
                 db_session=db_session,
                 auth_info=auth_info,
             )
-
         except Exception as error:
             logger.error(traceback.format_exc())
             log_and_raise(
@@ -224,25 +201,19 @@ def submit_workflow(
             status="scheduled",
             schedule=workflow_spec.schedule,
         )
-
     else:
-        run_arguments = {"local": False}
-        run = mlrun.api.crud.Workflows().execute_function(
+        run = mlrun.api.crud.WorkflowRunners().execute_workflow_runner(
             function=load_and_run_fn,
             project=project,
             workflow_spec=workflow_spec,
             artifact_path=workflow_request.artifact_path,
             namespace=workflow_request.namespace,
-            workflow_name=run_name,
-            run_kwargs=run_arguments,
         )
-
-        state = mlrun.run.RunStatuses.running
 
         return mlrun.api.schemas.WorkflowResponse(
             project=project.metadata.name,
             name=workflow_spec.name,
-            status=state,
+            status=mlrun.run.RunStatuses.running,
             run_id=run.uid(),
         )
 

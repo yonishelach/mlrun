@@ -16,7 +16,6 @@ import http
 import tempfile
 import time
 import traceback
-import typing
 import warnings
 from datetime import datetime
 from os import path, remove
@@ -2931,7 +2930,9 @@ class HTTPRunDB(RunDBInterface):
         self,
         project: str,
         name: str,
-        workflow_spec: Union[dict, schemas.WorkflowSpec],
+        workflow_spec: Union[
+            dict, schemas.WorkflowSpec, mlrun.projects.pipelines.WorkflowSpec
+        ],
         arguments: Optional[Dict] = None,
         artifact_path: Optional[str] = None,
         source: Optional[str] = None,
@@ -2961,6 +2962,9 @@ class HTTPRunDB(RunDBInterface):
         }
         if isinstance(workflow_spec, schemas.WorkflowSpec):
             workflow_spec = workflow_spec.dict()
+        elif isinstance(workflow_spec, mlrun.projects.pipelines.WorkflowSpec):
+            workflow_spec = workflow_spec.to_dict()
+
         req["spec"] = workflow_spec
 
         response = self.api_call(
@@ -2990,37 +2994,19 @@ class HTTPRunDB(RunDBInterface):
         self,
         name: str,
         url: str,
-        secrets: Optional[Dict] = None,
-        init_git: Optional[bool] = None,
-        subpath: Optional[str] = None,
-        clone: Optional[bool] = None,
     ):
         """
         Loading a project remotely from the given source.
 
         :param name:        project name
-        :param url:         name (in DB) or git or tar.gz or .zip sources archive path e.g.:
+        :param url:         git or tar.gz or .zip sources archive path e.g.:
                             git://github.com/mlrun/demo-xgb-project.git
                             http://mysite/archived-project.zip
-                            <project-name>
                             The git project should include the project yaml file.
-        :param secrets:     key:secret dict or SecretsStore used to download sources
-        :param init_git:    if True, will git init the context dir
-        :param subpath:     project subpath (within the archive)
-        :param clone:       if True, always clone (delete any existing content)
 
         :returns:      A BackgroundTask object, with details on execution process and its status.
         """
-        load_request = schemas.LoadProjectInput(
-            url=url,
-            secrets=secrets,
-            init_git=init_git,
-            subpath=subpath,
-            clone=clone,
-        )
-        response = self.api_call(
-            "POST", f"projects/{name}/load", body=load_request.json()
-        )
+        response = self.api_call("POST", f"projects/{name}/load", json={"url": url})
         return schemas.BackgroundTask(**response.json())
 
 

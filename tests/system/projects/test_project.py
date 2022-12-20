@@ -24,8 +24,8 @@ import pytest
 from kfp import dsl
 
 import mlrun
-from mlrun.artifacts import Artifact
 from mlrun.api.schemas import BackgroundTaskState
+from mlrun.artifacts import Artifact
 from mlrun.model import EntrypointParam
 from mlrun.utils import logger
 from tests.conftest import out_path
@@ -59,7 +59,7 @@ def pipe_test():
 @TestMLRunSystem.skip_test_if_env_not_configured
 @pytest.mark.enterprise
 class TestProject(TestMLRunSystem):
-    project_name = "project-system-test-project-1"
+    project_name = "project-system-test-project-12"
     custom_project_names_to_delete = []
 
     def custom_setup(self):
@@ -712,7 +712,7 @@ class TestProject(TestMLRunSystem):
             project.run("main", schedule="*/10 * * * *")
 
     def test_load_project_from_endpoint(self):
-        project_name = "load-test-1-1"
+        project_name = "load-test"
         background_task = self._run_db.load_project(
             name=project_name,
             url="git://github.com/mlrun/project-demo.git",
@@ -722,8 +722,8 @@ class TestProject(TestMLRunSystem):
             background_task.status.state == BackgroundTaskState.running
         ), "load project failed to run as a background task"
 
-        # Measuring time: todo: replace with number of tries and sleep
-        for _ in range(5):
+        # It takes approximately 3 seconds
+        for _ in range(6):
             background_task_resp = self._run_db.get_project_background_task(
                 project=project_name,
                 name=background_task.metadata.name,
