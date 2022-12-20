@@ -2964,7 +2964,8 @@ class HTTPRunDB(RunDBInterface):
             workflow_spec = workflow_spec.dict()
         elif isinstance(workflow_spec, mlrun.projects.pipelines.WorkflowSpec):
             workflow_spec = workflow_spec.to_dict()
-
+        if not workflow_spec.get("name"):
+            workflow_spec["name"] = name
         req["spec"] = workflow_spec
 
         response = self.api_call(

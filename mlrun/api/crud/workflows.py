@@ -127,7 +127,7 @@ class WorkflowRunners(
             load_only=load_only,
         )
 
-        function.run(runspec=runspec, artifact_path=artifact_path or "", local=False)
+        return function.run(runspec=runspec, artifact_path=artifact_path or "", local=False)
 
 
 def _label_run_object(
