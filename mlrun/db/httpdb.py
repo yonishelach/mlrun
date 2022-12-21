@@ -3007,7 +3007,7 @@ class HTTPRunDB(RunDBInterface):
 
         :returns:      A BackgroundTask object, with details on execution process and its status.
         """
-        response = self.api_call("POST", f"projects/{name}/load", json={"url": url})
+        response = self.api_call("POST", f"projects/{name}/load", params={"url": url})
         return schemas.BackgroundTask(**response.json())
 
 

@@ -59,7 +59,7 @@ def pipe_test():
 @TestMLRunSystem.skip_test_if_env_not_configured
 @pytest.mark.enterprise
 class TestProject(TestMLRunSystem):
-    project_name = "project-system-test-project-12"
+    project_name = "project-system-test-project"
     custom_project_names_to_delete = []
 
     def custom_setup(self):
@@ -712,7 +712,7 @@ class TestProject(TestMLRunSystem):
             project.run("main", schedule="*/10 * * * *")
 
     def test_load_project_from_endpoint(self):
-        project_name = "load-test"
+        project_name = "load-test-1"
         background_task = self._run_db.load_project(
             name=project_name,
             url="git://github.com/mlrun/project-demo.git",
@@ -722,14 +722,11 @@ class TestProject(TestMLRunSystem):
             background_task.status.state == BackgroundTaskState.running
         ), "load project failed to run as a background task"
 
-        # It takes approximately 3 seconds
-        for _ in range(6):
+        state = background_task.status.state
+        while state == BackgroundTaskState.running:
             background_task_resp = self._run_db.get_project_background_task(
                 project=project_name,
                 name=background_task.metadata.name,
             )
             state = background_task_resp.status.state
-            if state == BackgroundTaskState.succeeded:
-                break
-            assert state == BackgroundTaskState.running
-            time.sleep(1)
+        assert state == BackgroundTaskState.succeeded
