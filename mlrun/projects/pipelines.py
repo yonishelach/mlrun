@@ -893,6 +893,7 @@ def load_and_run(
     context.logger.info(f"Loaded project {project.name} from remote successfully")
 
     if load_only:
+        project.sync_functions(save=True)
         return
 
     workflow_log_message = workflow_name or workflow_path
