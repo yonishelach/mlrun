@@ -2930,7 +2930,9 @@ class HTTPRunDB(RunDBInterface):
         self,
         project: str,
         name: str,
-        workflow_spec: Union[dict, schemas.WorkflowSpec, mlrun.projects.pipelines.WorkflowSpec] = None,
+        workflow_spec: Union[
+            dict, schemas.WorkflowSpec, mlrun.projects.pipelines.WorkflowSpec
+        ] = None,
         arguments: Optional[Dict] = None,
         artifact_path: Optional[str] = None,
         source: Optional[str] = None,
@@ -3004,9 +3006,7 @@ class HTTPRunDB(RunDBInterface):
                             The git project should include the project yaml file.
         :returns:      A BackgroundTask object, with details on execution process and its status.
         """
-        response = self.api_call(
-            "POST", f"projects/{name}/load", params={"url": url}
-        )
+        response = self.api_call("POST", f"projects/{name}/load", params={"url": url})
         return schemas.BackgroundTask(**response.json())
 
 
