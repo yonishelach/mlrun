@@ -717,15 +717,14 @@ class _RemoteRunner(_PipelineRunner):
                 f"The project's source: {project.spec.source} is not a remote one e.g., git."
             )
 
+        run_db = mlrun.get_run_db()
+        msg = "executing workflow "
+        if workflow_spec.schedule:
+            msg += "scheduling "
+        logger.info(
+            f"{msg}'{runner_name}' remotely with {workflow_spec.engine} engine"
+        )
         try:
-            run_db = mlrun.get_run_db()
-            msg = "executing workflow "
-            if workflow_spec.schedule:
-                msg += "scheduling "
-            logger.info(
-                f"{msg}'{runner_name}' remotely with {workflow_spec.engine} engine"
-            )
-
             submit_workflow_result = run_db.submit_workflow(
                 project=project.name,
                 name=workflow_name,
@@ -734,31 +733,6 @@ class _RemoteRunner(_PipelineRunner):
                 source=project.spec.source,
                 run_name=runner_name,
                 namespace=namespace,
-            )
-
-            project.notifiers.push_pipeline_start_message(
-                project.metadata.name,
-            )
-            # Getting workflow id from run:
-            seconds = 0.1
-            while not workflow_id:
-                workflow_id = run_db.get_workflow_id(
-                    project=project.name,
-                    run_id=submit_workflow_result.run_id,
-                ).workflow_id
-                time.sleep(seconds)
-                seconds = 1
-
-            # After fetching the workflow_id the workflow executed successfully
-            state = mlrun.run.RunStatuses.succeeded
-            pipeline_context.clear()
-
-            return _PipelineRunStatus(
-                workflow_id,
-                get_workflow_engine(workflow_spec.engine),
-                project=project,
-                workflow=workflow_spec,
-                state=state,
             )
         except Exception as e:
             trace = traceback.format_exc()
@@ -775,6 +749,32 @@ class _RemoteRunner(_PipelineRunner):
                 workflow=workflow_spec,
                 state=state,
             )
+        project.notifiers.push_pipeline_start_message(
+            project.metadata.name,
+        )
+        if workflow_spec.schedule:
+            return
+        # Getting workflow id from run:
+        seconds = 0.1
+        while not workflow_id:
+            workflow_id = run_db.get_workflow_id(
+                project=project.name,
+                run_id=submit_workflow_result.run_id,
+            ).workflow_id
+            time.sleep(seconds)
+            seconds = 1
+
+        # After fetching the workflow_id the workflow executed successfully
+        state = mlrun.run.RunStatuses.succeeded
+        pipeline_context.clear()
+
+        return _PipelineRunStatus(
+            workflow_id,
+            get_workflow_engine(workflow_spec.engine),
+            project=project,
+            workflow=workflow_spec,
+            state=state,
+        )
 
     @staticmethod
     def wait_for_completion(run_id, project=None, timeout=None, expected_statuses=None):
