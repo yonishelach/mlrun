@@ -2968,7 +2968,10 @@ class HTTPRunDB(RunDBInterface):
             if not workflow_spec.get("name"):
                 workflow_spec["name"] = name
         req["spec"] = workflow_spec
-
+        print()
+        print("DEBUG\n" + ("=" * 100))
+        print(req)
+        print()
         response = self.api_call(
             "POST",
             f"projects/{project}/workflows/{name}/submit",
