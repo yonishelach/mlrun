@@ -130,23 +130,11 @@ def submit_workflow(
         and mlrun.mlconf.httpdb.clusterization.role
         != mlrun.api.schemas.ClusterizationRole.chief
     ):
-        try:
-            # Check permission for scheduling:
-            allowed_creating_schedule = mlrun.api.utils.auth.verifier.AuthVerifier().query_project_resource_permissions(
-                resource_type=mlrun.api.schemas.AuthorizationResourceTypes.schedule,
-                project_name=project.metadata.name,
-                resource_name=run_name,
-                action=mlrun.api.schemas.AuthorizationAction.create,
-                auth_info=auth_info,
-            )
-        except mlrun.errors.MLRunAccessDeniedError:
-            allowed_creating_schedule = False
+        chief_client = mlrun.api.utils.clients.chief.Client()
+        return chief_client.submit_workflow(
+            project=project.metadata.name, name=name, json=workflow_request.dict()
+        )
 
-        if not allowed_creating_schedule:
-            chief_client = mlrun.api.utils.clients.chief.Client()
-            return chief_client.submit_workflow(
-                project=project.metadata.name, name=name, json=workflow_request.dict()
-            )
     # Preparing inputs for load_and_run function
     # 1. To override the source of the project.
     # This is mainly for supporting loading project from a certain commits (GitHub)
