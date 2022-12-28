@@ -174,7 +174,7 @@ def _prepare_run_object_for_scheduling(
         "metadata": {
             "uid": meta_uid,
             "project": project.metadata.name,
-            "name": workflow_spec.name,
+            "name": run_name,
         },
     }
 
