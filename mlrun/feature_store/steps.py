@@ -283,7 +283,7 @@ class Imputer(StepToDict, MLRunStep):
 
     def _do_storey(self, event):
         imputed_values = {
-            feature: self.default_value for feature, val in event.items()
+            feature: self.default_value if feature == "age" else val for feature, val in event.items()
         }
         return imputed_values
         # printed_keys = []
