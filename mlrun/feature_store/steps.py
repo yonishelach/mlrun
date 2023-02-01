@@ -302,10 +302,10 @@ class Imputer(StepToDict, MLRunStep):
             print("after")
             for key in printed_keys:
                 print(f"{key}: {imputed_values[key]}")
-            print("=" * 100)
 
         if printed:
             print(f"check amount_count_2h: {imputed_values.get('amount_count_2h', 'key not found')}")
+            print("=" * 100)
         return imputed_values
 
     def _do_pandas(self, event):
