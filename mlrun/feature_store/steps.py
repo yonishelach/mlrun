@@ -282,19 +282,18 @@ class Imputer(StepToDict, MLRunStep):
         return value
 
     def _do_storey(self, event):
-        printed = False
+        printed_keys = []
         for key, iv in event.items():
             if pd.isna(iv):
-                printed = True
+                printed_keys.append(key)
                 print(f"{key}: {iv}")
         imputed_values = {
             feature: self._impute(feature, val) for feature, val in event.items()
         }
-        for key, iv in imputed_values.items():
-            if pd.isna(iv):
-                print(f"{key}: {iv}")
-
-        if printed:
+        if printed_keys:
+            print("after")
+            for key in printed_keys:
+                print(f"{key}: {imputed_values[key]}")
             print("=" * 100)
         return imputed_values
 
