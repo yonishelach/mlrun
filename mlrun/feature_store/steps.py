@@ -283,8 +283,13 @@ class Imputer(StepToDict, MLRunStep):
 
     def _do_storey(self, event):
         printed_keys = []
+        printed = False
         for key, iv in event.items():
             if pd.isna(iv):
+                if not printed:
+                    if "source" in event.keys():
+                        print(f"source: {event['source']}")
+                    printed = True
                 printed_keys.append(key)
                 print(f"{key}: {iv}")
         imputed_values = {
