@@ -262,6 +262,7 @@ class Imputer(StepToDict, MLRunStep):
         method: str = "avg",
         default_value=None,
         mapping: Dict[str, Any] = None,
+        features: List[str] = None,
         **kwargs,
     ):
         """Replace None values with default values
@@ -275,6 +276,7 @@ class Imputer(StepToDict, MLRunStep):
         self.mapping = mapping or {}
         self.method = method
         self.default_value = default_value
+        self.features = features or []
 
     def _impute(self, feature: str, value: Any):
         if pd.isna(value):
@@ -283,7 +285,7 @@ class Imputer(StepToDict, MLRunStep):
 
     def _do_storey(self, event):
         imputed_values = {
-            feature: self.default_value if feature == "amount_sum_2h" else val for feature, val in event.items()
+            feature: self.default_value if feature in self.features else val for feature, val in event.items()
         }
         return imputed_values
         # printed_keys = []
