@@ -814,14 +814,6 @@ class FlowStep(BaseStep):
         self.check_and_process_graph()
 
         for step in self._steps.values():
-            try:
-                print(f"YONI step = {step}")
-            except:
-                print()
-            try:
-                print(f"YONI step name = {step.name}")
-            except:
-                print()
             step.set_parent(self)
             step.init_object(context, namespace, mode, reset=reset)
         self._set_error_handler()
