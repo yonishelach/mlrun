@@ -282,11 +282,20 @@ class Imputer(StepToDict, MLRunStep):
         return value
 
     def _do_storey(self, event):
-        print(f"\n\n=YONI= event: {event}\n\n")
-        print(f"\n\n=YONI= event.items: {event.items}\n\n")
+        printed = False
+        for key, iv in event.items():
+            if pd.isna(iv):
+                printed = True
+                print(f"{key}: {iv}")
         imputed_values = {
             feature: self._impute(feature, val) for feature, val in event.items()
         }
+        for key, iv in imputed_values.items():
+            if pd.isna(iv):
+                print(f"{key}: {iv}")
+
+        if printed:
+            print("=" * 100)
         return imputed_values
 
     def _do_pandas(self, event):
