@@ -282,31 +282,35 @@ class Imputer(StepToDict, MLRunStep):
         return value
 
     def _do_storey(self, event):
-        printed_keys = []
-        printed = False
-        for key, iv in event.items():
-            if pd.isna(iv):
-                if not printed:
-                    if "source" in event.keys():
-                        print(f"source: {event['source']}")
-                    printed = True
-                printed_keys.append(key)
-                print(f"{key}: {iv}")
-
-        if printed:
-            print(f"check amount_count_2h: {event['amount_count_2h']}")
         imputed_values = {
-            feature: self._impute(feature, val) for feature, val in event.items()
+            feature: self.default_value for feature, val in event.items()
         }
-        if printed_keys:
-            print("after")
-            for key in printed_keys:
-                print(f"{key}: {imputed_values[key]}")
-
-        if printed:
-            print(f"check amount_count_2h: {imputed_values.get('amount_count_2h', 'key not found')}")
-            print("=" * 100)
         return imputed_values
+        # printed_keys = []
+        # printed = False
+        # for key, iv in event.items():
+        #     if pd.isna(iv):
+        #         if not printed:
+        #             if "source" in event.keys():
+        #                 print(f"source: {event['source']}")
+        #             printed = True
+        #         printed_keys.append(key)
+        #         print(f"{key}: {iv}")
+        #
+        # if printed:
+        #     print(f"check amount_count_2h: {event['amount_count_2h']}")
+        # imputed_values = {
+        #     feature: self._impute(feature, val) for feature, val in event.items()
+        # }
+        # if printed_keys:
+        #     print("after")
+        #     for key in printed_keys:
+        #         print(f"{key}: {imputed_values[key]}")
+        #
+        # if printed:
+        #     print(f"check amount_count_2h: {imputed_values.get('amount_count_2h', 'key not found')}")
+        #     print("=" * 100)
+        # return imputed_values
 
     def _do_pandas(self, event):
         for feature in event.columns:
