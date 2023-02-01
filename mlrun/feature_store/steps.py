@@ -292,6 +292,9 @@ class Imputer(StepToDict, MLRunStep):
                     printed = True
                 printed_keys.append(key)
                 print(f"{key}: {iv}")
+
+        if printed:
+            print(f"check amount_count_2h: {event['amount_count_2h']}")
         imputed_values = {
             feature: self._impute(feature, val) for feature, val in event.items()
         }
@@ -300,6 +303,9 @@ class Imputer(StepToDict, MLRunStep):
             for key in printed_keys:
                 print(f"{key}: {imputed_values[key]}")
             print("=" * 100)
+
+        if printed:
+            print(f"check amount_count_2h: {imputed_values.get('amount_count_2h', 'key not found')}")
         return imputed_values
 
     def _do_pandas(self, event):
