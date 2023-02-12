@@ -2871,7 +2871,6 @@ class HTTPRunDB(RunDBInterface):
     def get_marketplace_catalog(
         self,
         source_name: str,
-        channel: str = None,
         version: str = None,
         tag: str = None,
         force_refresh: bool = False,
@@ -2881,7 +2880,6 @@ class HTTPRunDB(RunDBInterface):
         The list of items can be filtered according to various filters, using item's metadata to filter.
 
         :param source_name: Name of the source.
-        :param channel: Filter items according to their channel. For example ``development``.
         :param version: Filter items according to their version.
         :param tag: Filter items based on tag.
         :param force_refresh: Make the server fetch the catalog from the actual marketplace source,
@@ -2893,7 +2891,6 @@ class HTTPRunDB(RunDBInterface):
         """
         path = (f"marketplace/sources/{source_name}/items",)
         params = {
-            "channel": channel,
             "version": version,
             "tag": tag,
             "force-refresh": force_refresh,
