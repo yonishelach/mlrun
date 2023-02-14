@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import enum
 from datetime import datetime, timezone
 from typing import List, Optional
 
+from pathlib import Path
 from pydantic import BaseModel, Extra, Field
 
 import mlrun.api.utils.helpers
@@ -57,7 +59,11 @@ class MarketplaceSource(BaseModel):
     spec: MarketplaceSourceSpec
     status: Optional[ObjectStatus] = ObjectStatus(state="created")
 
-    def get_full_uri(self, relative_path):
+    def get_full_uri(self, relative_path: str):
+        if relative_path.startswith("."):
+            relative_path = relative_path[1:]
+        if relative_path.startswith("/"):
+            relative_path = relative_path[1:]
         return "{base}/{object_type}/{channel}/{relative_path}".format(
             base=self.spec.path,
             object_type=self.spec.object_type,
@@ -105,13 +111,13 @@ class MarketplaceItemMetadata(MarketplaceObjectMetadata):
     version: str
     tag: Optional[str]
 
-    def get_relative_path(self, channel: str) -> str:
+    def get_relative_path(self) -> str:
         if self.source == MarketplaceSourceType.functions:
             # This is needed since the marketplace deployment script modifies the paths to use _ instead of -.
             modified_name = self.name.replace("-", "_")
             # Prefer using the tag if exists. Otherwise, use version.
             version = self.tag or self.version
-            return f"{self.source.value}/{channel}/{modified_name}/{version}/"
+            return f"{modified_name}/{version}/"
         else:
             raise mlrun.errors.MLRunInvalidArgumentError(
                 f"Bad source for marketplace item - {self.source}"
@@ -133,3 +139,14 @@ class MarketplaceCatalog(BaseModel):
     kind: ObjectKind = Field(ObjectKind.marketplace_catalog, const=True)
     channel: str
     catalog: List[MarketplaceItem]
+
+
+function_assets = {
+    "source": "spec:filename",
+    "example": "metadata:example",
+    "docs": "metadata:docs",
+}
+
+
+class AssetType(enum.Enum):
+    functions = function_assets

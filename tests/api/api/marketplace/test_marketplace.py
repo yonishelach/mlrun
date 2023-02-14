@@ -248,8 +248,6 @@ def test_marketplace_default_source(
     manager = mlrun.api.crud.Marketplace()
 
     source_object = mlrun.api.schemas.MarketplaceSource.generate_default_source()
-    print(source_object.dict()["spec"]["object_type"])
-    print(type(source_object.dict()["spec"]["object_type"]))
     catalog = manager.get_source_catalog(source_object)
     assert len(catalog.catalog) > 0
     print(f"Retrieved function catalog. Has {len(catalog.catalog)} functions in it.")
@@ -257,10 +255,16 @@ def test_marketplace_default_source(
     for i in range(10):
         function = random.choice(catalog.catalog)
         print(
-            f"Selected the following: function = {function.metadata.name}, channel = {function.metadata.channel},"
+            f"Selected the following: function = {function.metadata.name},"
             + f" tag = {function.metadata.tag}, version = {function.metadata.version}"
         )
-
+        asset = manager.get_asset(
+            source=source_object,
+            item_name=function.metadata.name,
+            asset_name="example",
+        )
+        print(asset)
+        print(type(asset))
         function_yaml = manager.get_item_object_using_source_credentials(
             source_object, function.spec.item_uri + "src/function.yaml"
         )

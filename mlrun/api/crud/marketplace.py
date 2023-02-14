@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 import json
-
+from typing import Optional
 import mlrun.errors
 import mlrun.utils.singleton
 from mlrun.api.schemas.marketplace import (
@@ -23,6 +23,7 @@ from mlrun.api.schemas.marketplace import (
     MarketplaceItemSpec,
     MarketplaceSource,
     ObjectStatus,
+    AssetType,
 )
 from mlrun.api.utils.singletons.k8s import get_k8s
 from mlrun.config import config
@@ -131,13 +132,10 @@ class Marketplace(metaclass=mlrun.utils.singleton.Singleton):
                 version_dict = object_dict[version_tag]
                 object_details_dict = version_dict.copy()
                 spec_dict = object_details_dict.pop("spec", None)
-                print("==========")
-                print(object_details_dict)
-                print("==========")
                 metadata = MarketplaceItemMetadata(
                     tag=version_tag, **object_details_dict
                 )
-                item_uri = source.get_full_uri(metadata.get_relative_path(channel))
+                item_uri = source.get_full_uri(metadata.get_relative_path())
                 spec = MarketplaceItemSpec(item_uri=item_uri, **spec_dict)
                 item = MarketplaceItem(
                     metadata=metadata, spec=spec, status=ObjectStatus()
@@ -212,3 +210,55 @@ class Marketplace(metaclass=mlrun.utils.singleton.Singleton):
         else:
             catalog_data = mlrun.run.get_object(url=url, secrets=credentials)
         return catalog_data
+
+    def get_asset(
+        self,
+        source: MarketplaceSource,
+        item_name: str,
+        asset_name: str,
+        tag: Optional[str] = None,
+        version: Optional[str] = None,
+    ):
+        credentials = self._get_source_credentials(source.metadata.name)
+        catalog = self.get_source_catalog(source=source, tag=tag, version=version)
+        asset_relative_path = self._get_asset_relative_path(
+            catalog=catalog,
+            item_name=item_name,
+            asset=asset_name,
+            source_type=source.spec.object_type
+        )
+        asset_full_path = source.get_full_uri(asset_relative_path)
+        return mlrun.run.get_object(url=asset_full_path, secrets=credentials)
+
+    def _get_asset_relative_path(self, catalog: MarketplaceCatalog, item_name: str, asset: str, source_type: str, tag: Optional[str] = None, version: Optional[str] = None):
+        asset_type = AssetType[source_type].value
+        asset_key = asset_type.get(asset, None)
+        if not asset_key:
+            raise mlrun.errors.MLRunInvalidArgumentError(f"Invalid asset {asset} of source type {source_type}")
+        asset_key = asset_key.split(":") if ":" in asset_key else [asset_key]
+
+        _tag = tag or version or "latest"
+        items = [item for item in catalog.catalog if item.metadata.name == item_name and item.metadata.tag == _tag]
+        item: MarketplaceItem = self.only_one_validation(
+            items=items,
+            item_name=item_name,
+            version=version,
+            tag=tag,
+        )
+        asset_relative_path = item
+        for key in asset_key:
+            asset_relative_path = getattr(asset_relative_path, key)
+        return item.metadata.get_relative_path() + asset_relative_path
+
+    @staticmethod
+    def only_one_validation(items, item_name, version, tag):
+        if not items:
+            raise mlrun.errors.MLRunNotFoundError(
+                f"Item not found. source={item_name}, version={version}"
+            )
+        if len(items) > 1:
+            raise mlrun.errors.MLRunInvalidArgumentError(
+                "Query resulted in more than 1 catalog items. "
+                + f"source={item_name}, version={version}, tag={tag}"
+            )
+        return items[0]
