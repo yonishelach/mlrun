@@ -14,9 +14,8 @@
 #
 import enum
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-from pathlib import Path
 from pydantic import BaseModel, Extra, Field
 
 import mlrun.api.utils.helpers
@@ -91,7 +90,9 @@ class MarketplaceSource(BaseModel):
             spec=MarketplaceSourceSpec(
                 path=config.marketplace.default_source.url,
                 channel=config.marketplace.default_source.channel,
-                object_type=MarketplaceSourceType(config.marketplace.default_source.object_type),
+                object_type=MarketplaceSourceType(
+                    config.marketplace.default_source.object_type
+                ),
             ),
             status=ObjectStatus(state="created"),
         )
@@ -128,25 +129,24 @@ class MarketplaceItemSpec(ObjectSpec):
     item_uri: str
 
 
+class AssetKind(enum.Enum):
+    functions = {
+        "source": "spec:filename",
+        "example": "metadata:example",
+        "docs": "static/documentation.html",
+        "static-example": "static/example.html",
+    }
+
+
 class MarketplaceItem(BaseModel):
     kind: ObjectKind = Field(ObjectKind.marketplace_item, const=True)
     metadata: MarketplaceItemMetadata
     spec: MarketplaceItemSpec
     status: ObjectStatus
+    assets: Dict[str, str] = {}
 
 
 class MarketplaceCatalog(BaseModel):
     kind: ObjectKind = Field(ObjectKind.marketplace_catalog, const=True)
     channel: str
     catalog: List[MarketplaceItem]
-
-
-function_assets = {
-    "source": "spec:filename",
-    "example": "metadata:example",
-    "docs": "metadata:docs",
-}
-
-
-class AssetType(enum.Enum):
-    functions = function_assets

@@ -564,7 +564,6 @@ class RunDBInterface(ABC):
         self,
         source_name: str,
         item_name: str,
-        channel: str = "development",
         version: str = None,
         tag: str = "latest",
         force_refresh: bool = False,

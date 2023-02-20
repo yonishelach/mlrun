@@ -444,7 +444,8 @@ def test_resolve_kfp_url():
 def test_get_hub_url():
     # full path configured - no edits
     mlconf.config.hub_url = (
-        "https://raw.githubusercontent.com/mlrun/functions/{tag}/{name}/function.yaml"
+        "https://raw.githubusercontent.com/mlrun/master/marketplace"
+        "/master/functions/{tag}/{name}/function.yaml"
     )
     assert mlconf.config.get_hub_url() == mlconf.config.hub_url
     # partial path configured + http - edit with tag

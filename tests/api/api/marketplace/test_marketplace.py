@@ -88,7 +88,11 @@ def test_marketplace_source_apis(
     source_1["source"]["metadata"]["something_new"] = 42
     response = client.put("marketplace/sources/source_1", json=source_1)
     assert response.status_code == HTTPStatus.OK.value
-    exclude_paths = ["root['metadata']['updated']", "root['metadata']['created']", "root['spec']['object_type']"]
+    exclude_paths = [
+        "root['metadata']['updated']",
+        "root['metadata']['created']",
+        "root['spec']['object_type']",
+    ]
     assert (
         deepdiff.DeepDiff(
             response.json()["source"], source_1["source"], exclude_paths=exclude_paths
@@ -161,7 +165,11 @@ def test_marketplace_credentials_removed_from_db(
 
     expected_response = source_1["source"]
     expected_response["spec"]["credentials"] = None
-    exclude_paths = ["root['metadata']['updated']", "root['metadata']['created']", "root['spec']['object_type']"]
+    exclude_paths = [
+        "root['metadata']['updated']",
+        "root['metadata']['created']",
+        "root['spec']['object_type']",
+    ]
     assert (
         deepdiff.DeepDiff(
             expected_response, object_dict["source"], exclude_paths=exclude_paths
@@ -235,10 +243,7 @@ def test_marketplace_source_manager(
         )
 
     item = manager.get_item(source_object, "prod_function", "1.0.0")
-    assert (
-        item.metadata.name == "prod_function"
-        and item.metadata.version == "1.0.0"
-    )
+    assert item.metadata.name == "prod_function" and item.metadata.version == "1.0.0"
 
 
 def test_marketplace_default_source(
@@ -258,13 +263,6 @@ def test_marketplace_default_source(
             f"Selected the following: function = {function.metadata.name},"
             + f" tag = {function.metadata.tag}, version = {function.metadata.version}"
         )
-        asset = manager.get_asset(
-            source=source_object,
-            item_name=function.metadata.name,
-            asset_name="example",
-        )
-        print(asset)
-        print(type(asset))
         function_yaml = manager.get_item_object_using_source_credentials(
             source_object, function.spec.item_uri + "src/function.yaml"
         )
@@ -301,3 +299,17 @@ def test_marketplace_catalog_apis(
     function_modified_name = item["metadata"]["name"].replace("_", "-")
 
     assert yaml_function_name == function_modified_name
+
+    for asset, content_type in [
+        ("source", "text/x-python"),
+        ("example", "application/octet-stream"),
+        ("docs", "text/html"),
+        ("static-example", "text/html"),
+    ]:
+        asset_data = client.get(
+            f"marketplace/sources/{source_name}/items/{item['metadata']['name']}/assets/{asset}"
+        )
+        assert (
+            asset_data.headers.get("content-type").replace("; charset=utf-8", "")
+            == content_type
+        )

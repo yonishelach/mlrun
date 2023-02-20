@@ -2902,7 +2902,6 @@ class HTTPRunDB(RunDBInterface):
         self,
         source_name: str,
         item_name: str,
-        channel: str = "development",
         version: str = None,
         tag: str = "latest",
         force_refresh: bool = False,
@@ -2912,7 +2911,6 @@ class HTTPRunDB(RunDBInterface):
 
         :param source_name: Name of source.
         :param item_name: Name of the item to retrieve, as it appears in the catalog.
-        :param channel: Get the item from the specified channel. Default is ``development``.
         :param version: Get a specific version of the item. Default is ``None``.
         :param tag: Get a specific version of the item identified by tag. Default is ``latest``.
         :param force_refresh: Make the server fetch the information from the actual marketplace
@@ -2922,13 +2920,41 @@ class HTTPRunDB(RunDBInterface):
         """
         path = (f"marketplace/sources/{source_name}/items/{item_name}",)
         params = {
-            "channel": channel,
             "version": version,
             "tag": tag,
             "force-refresh": force_refresh,
         }
         response = self.api_call(method="GET", path=path, params=params)
         return schemas.MarketplaceItem(**response.json())
+
+    def get_marketplace_item_asset(
+        self,
+        source_name: str,
+        item_name: str,
+        asset_name: str,
+        tag: str = "latest",
+        version: Optional[str] = None,
+    ) -> bytes:
+        """
+        Retrieve asset from a specific item in specific marketplace source.
+
+        :param source_name: marketplace source name
+        :param item_name:   name that define the item
+        :param asset_name:  the name of the asset to retrieve
+        :param tag:         tag of item - latest or version number
+        :param version:     item version
+
+        :return: asset object as bytes.
+        """
+        path = (
+            f"marketplace/sources/{source_name}/items/{item_name}/assets/{asset_name}"
+        )
+        params = {
+            "version": version,
+            "tag": tag,
+        }
+        response = self.api_call(method="GET", path=path, params=params)
+        return response.content
 
     def verify_authorization(
         self, authorization_verification_input: schemas.AuthorizationVerificationInput

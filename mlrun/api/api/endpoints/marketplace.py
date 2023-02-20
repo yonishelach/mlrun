@@ -253,9 +253,7 @@ async def get_object(
     return Response(content=object_data, media_type=ctype)
 
 
-@router.get(
-    "/marketplace/sources/{source_name}/items/{item_name}/assets/{asset_name}"
-)
+@router.get("/marketplace/sources/{source_name}/items/{item_name}/assets/{asset_name}")
 async def get_asset(
     source_name: str,
     item_name: str,
@@ -267,6 +265,19 @@ async def get_asset(
         mlrun.api.api.deps.authenticate_request
     ),
 ):
+    """
+    Retrieve asset from a specific item in specific marketplace source.
+
+    :param source_name: marketplace source name
+    :param item_name:   name that define the item
+    :param asset_name:  the name of the asset to retrieve
+    :param tag:         tag of item - latest or version number
+    :param version:     item version
+    :param db_session:  a session that manages the current dialog with the database
+    :param auth_info:   the auth info of the request
+
+    :return: fastapi response with the asset in content
+    """
     source = await run_in_threadpool(
         get_db().get_marketplace_source, db_session, source_name
     )
@@ -277,13 +288,22 @@ async def get_asset(
         auth_info,
     )
 
-    asset = await run_in_threadpool(
-        mlrun.api.crud.Marketplace().get_asset, source.source, item_name, asset_name, tag, version
+    asset, url = await run_in_threadpool(
+        mlrun.api.crud.Marketplace().get_asset,
+        source.source,
+        item_name,
+        asset_name,
+        tag,
+        version,
     )
 
-    # ctype, _ = mimetypes.guess_type(objpath)
-    # if not ctype:
-    #     ctype = "application/octet-stream"
-    # return fastapi.Response(
-    #     content=body, media_type=ctype, headers={"x-suggested-filename": filename}
-    # )
+    await mlrun.api.utils.auth.verifier.AuthVerifier().query_global_resource_permissions(
+        mlrun.api.schemas.AuthorizationResourceTypes.marketplace_source,
+        AuthorizationAction.read,
+        auth_info,
+    )
+
+    ctype, _ = mimetypes.guess_type(url)
+    if not ctype:
+        ctype = "application/octet-stream"
+    return Response(content=asset, media_type=ctype)
